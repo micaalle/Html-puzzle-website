@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale: 1.0">
+    <title>New York City Rat Puzzle One</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        #puzzle-container {
+            position: relative;
+            width: 1600px; 
+            height: 900px;
+            border: 2px solid black;
+            margin: 20px auto;
+        }
+
+        .puzzle-piece {
+            width: 533px;  
+            height: 300px; 
+            position: absolute;
+            background-image: url('images/nyc-image.jpg'); 
+            background-size: 1600px 900px; 
+        }
+
+        /*positions that each piece can be initialize in*/
+        #piece1 { background-position: 0 0; top: 0; left: 0; }
+        #piece2 { background-position: -533px 0; top: 0; left: 533px; }
+        #piece3 { background-position: -1066px 0; top: 0; left: 1066px; }
+        #piece4 { background-position: 0 -300px; top: 300px; left: 0; }
+        #piece5 { background-position: -533px -300px; top: 300px; left: 533px; }
+        #piece6 { background-position: -1066px -300px; top: 300px; left: 1066px; }
+        #piece7 { background-position: 0 -600px; top: 600px; left: 0; }
+        #piece8 { background-position: -533px -600px; top: 600px; left: 533px; }
+        #piece9 { background-position: -1066px -600px; top: 600px; left: 1066px; }
+
+        
+        #final-piece {
+            width: 533px;
+            height: 300px;
+            background-image: url('images/nyc-image.jpg');
+            background-size: 1600px 900px;
+            background-position: -1066px -600px; 
+            position: absolute;
+            top: 600px;   
+            left: 1066px;
+        }
+
+        
+        .move-button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #reset-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #reset-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #message {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<!-- Create all of the pieces and have a seperate "final piece"-->
+    <h2>New York City Rat Puzzle One</h2>
+    <div id="puzzle-container">
+        
+        <div id="piece1" class="puzzle-piece"></div>
+        <div id="piece2" class="puzzle-piece"></div>
+        <div id="piece3" class="puzzle-piece"></div>
+        <div id="piece4" class="puzzle-piece"></div>
+        <div id="piece5" class="puzzle-piece"></div>
+        <div id="piece6" class="puzzle-piece"></div>
+        <div id="piece7" class="puzzle-piece"></div>
+        <div id="piece8" class="puzzle-piece"></div>
+        
+        
+        <div id="final-piece" class="puzzle-piece"></div>
+    </div>
+
+    <div>
+        <button id="move-up" class="move-button">Up</button>
+        <button id="move-down" class="move-button">Down</button>
+        <button id="move-left" class="move-button">Left</button>
+        <button id="move-right" class="move-button">Right</button>
+    </div>
+
+    <div id="message"></div>
+    <div id="reset-container">
+        <button id="reset-button">Try Again</button>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            var finalPiece = $('#final-piece');
+            var pieceWidth = 533;  
+            var pieceHeight = 300; 
+            var containerWidth = 1600;
+            var containerHeight = 900; 
+
+            // find the random position that is only used for the final piece
+            function getRandPos() {
+            
+                var positions = [
+                    { top: 0, left: 0 },
+                    { top: 0, left: 533 },
+                    { top: 0, left: 1066 },
+                    { top: 300, left: 0 },
+                    { top: 300, left: 533 },
+                    { top: 300, left: 1066 },
+                    { top: 600, left: 0 },
+                    { top: 600, left: 533 }
+                ];
+
+             
+                var randomPosition;
+                do {
+                    randomPosition = positions[Math.floor(Math.random() * positions.length)];
+                } while (randomPosition.top === 600 && randomPosition.left === 1066); 
+
+                return randomPosition;
+            }
+
+            var randomStartPos = getRandPos();
+            finalPiece.css({
+                top: randomStartPos.top,
+                left: randomStartPos.left
+            });
+
+            // used for the reset
+            function checkIfSolved() {
+                var finalPieceTop = parseInt(finalPiece.css('top'));
+                var finalPieceLeft = parseInt(finalPiece.css('left'));
+
+                if (finalPieceTop === 600 && finalPieceLeft === 1066) {
+ 
+                    $('#message').text('Wow! You solved the New York City Rat Pizza Puzzle!');
+                    $('#reset-container').show();
+                    $('#move-up, #move-down, #move-left, #move-right').prop('disabled', true); 
+                }
+            }
+            //basic movement buttons
+            $('#move-up').click(function() {
+                var currentTop = parseInt(finalPiece.css('top'));
+                if (currentTop > 0) {
+                    finalPiece.animate({
+                        top: '-=300px' 
+                    }, 500, function() {
+                        checkIfSolved();
+                    });
+                }
+            });
+
+   
+            $('#move-down').click(function() {
+                var currentTop = parseInt(finalPiece.css('top'));
+                if (currentTop + pieceHeight < containerHeight) {
+                    finalPiece.animate({
+                        top: '+=300px'  
+                    }, 500, function() {
+                        checkIfSolved();
+                    });
+                }
+            });
+
+            $('#move-left').click(function() {
+                var currentLeft = parseInt(finalPiece.css('left'));
+                if (currentLeft > 0) {
+                    finalPiece.animate({
+                        left: '-=533px'  
+                    }, 500, function() {
+                        checkIfSolved();
+                    });
+                }
+            });
+
+            $('#move-right').click(function() {
+                var currentLeft = parseInt(finalPiece.css('left'));
+                if (currentLeft + pieceWidth < containerWidth) {
+                    finalPiece.animate({
+                        left: '+=533px'  
+                    }, 500, function() {
+                        checkIfSolved();
+                    });
+                }
+            });
+
+       
+            $('#reset-button').click(function() {
+                location.reload(); 
+            });
+        });
+    </script>
+</body>
+</html>

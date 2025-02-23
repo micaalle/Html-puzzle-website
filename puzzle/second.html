@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale: 1.0">
+    <title>New York City Rat Puzzle Two</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        #puzzle-container {
+            position: relative;
+            width: 1600px; 
+            height: 900px; 
+            border: 2px solid black;
+            margin: 20px auto;
+        }
+
+        .puzzle-piece {
+            width: 533px;  
+            height: 300px; 
+            position: absolute;
+            background-image: url('images/nyc-image.jpg'); 
+            background-size: 1600px 900px;
+            cursor: pointer;
+        }
+
+
+        .snap-position {
+            width: 533px;
+            height: 300px;
+            position: absolute;
+        }
+
+        #message {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #reset-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #reset-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- snap position which is aligned with the background so puzzle doesn't have to be solve pixel perfectly-->
+    <h2>New York City Rat Puzzle Two</h2>
+    <div id="puzzle-container">
+        <div class="snap-position" style="top: 0; left: 0;"></div>
+        <div class="snap-position" style="top: 0; left: 533px;"></div>
+        <div class="snap-position" style="top: 0; left: 1066px;"></div>
+        <div class="snap-position" style="top: 300px; left: 0;"></div>
+        <div class="snap-position" style="top: 300px; left: 533px;"></div>
+        <div class="snap-position" style="top: 300px; left: 1066px;"></div>
+        <div class="snap-position" style="top: 600px; left: 0;"></div>
+        <div class="snap-position" style="top: 600px; left: 533px;"></div>
+        <div class="snap-position" style="top: 600px; left: 1066px;"></div>
+
+        <div id="piece1" class="puzzle-piece" style="background-position: 0 0;"></div>
+        <div id="piece2" class="puzzle-piece" style="background-position: -533px 0;"></div>
+        <div id="piece3" class="puzzle-piece" style="background-position: -1066px 0;"></div>
+        <div id="piece4" class="puzzle-piece" style="background-position: 0 -300px;"></div>
+        <div id="piece5" class="puzzle-piece" style="background-position: -533px -300px;"></div>
+        <div id="piece6" class="puzzle-piece" style="background-position: -1066px -300px;"></div>
+        <div id="piece7" class="puzzle-piece" style="background-position: 0 -600px;"></div>
+        <div id="piece8" class="puzzle-piece" style="background-position: -533px -600px;"></div>
+        <div id="piece9" class="puzzle-piece" style="background-position: -1066px -600px;"></div>
+    </div>
+
+    <div id="message"></div>
+    <div id="reset-container">
+        <button id="reset-button">Try Again</button>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            var snapPositions = [
+                { top: 0, left: 0 },
+                { top: 0, left: 533 },
+                { top: 0, left: 1066 },
+                { top: 300, left: 0 },
+                { top: 300, left: 533 },
+                { top: 300, left: 1066 },
+                { top: 600, left: 0 },
+                { top: 600, left: 533 },
+                { top: 600, left: 1066 }
+            ];
+
+            var piecePositions = {};
+            // makes it so each piece is placed randomly however not in its starting spot 
+            function randPuzzle() {
+                var positionsCopy = [...snapPositions]; 
+                $('.puzzle-piece').each(function() {
+                    var randomIndex = Math.floor(Math.random() * positionsCopy.length);
+                    var randomPosition = positionsCopy[randomIndex];
+                    
+    
+                    positionsCopy.splice(randomIndex, 1);
+                    piecePositions[$(this).attr('id')] = randomPosition;
+
+  
+                    $(this).css({
+                        top: randomPosition.top + 'px',
+                        left: randomPosition.left + 'px'
+                    });
+                });
+            }
+
+
+            randPuzzle();
+            // makes the pieces draggable and will reset
+            $('.puzzle-piece').draggable({
+                containment: '#puzzle-container', 
+                stop: function(event, ui) {
+                    var draggedPiece = $(this);
+                    var pieceTop = ui.position.top;
+                    var pieceLeft = ui.position.left;
+
+                    var closestSnap = findSnapPt(pieceTop, pieceLeft);
+
+                    var existingPiece = findPiecePos(closestSnap.top, closestSnap.left);
+
+                    if (existingPiece) {
+
+                        var existingPieceTop = parseInt(existingPiece.css('top'));
+                        var existingPieceLeft = parseInt(existingPiece.css('left'));
+
+                        existingPiece.animate({
+                            top: pieceTop,
+                            left: pieceLeft
+                        }, 200);
+
+
+                        piecePositions[draggedPiece.attr('id')] = { top: existingPieceTop, left: existingPieceLeft };
+                        piecePositions[existingPiece.attr('id')] = { top: pieceTop, left: pieceLeft };
+                    }
+                    //moves the piece if they collide slightly so that it is not fully covering it
+                    //originally I wanted to snap it into the spot it came from but that required a lot of storing previous pos states and I couldn't be bothered since we are already storing current states
+                    draggedPiece.animate({
+                        top: closestSnap.top,
+                        left: closestSnap.left
+                    }, 200, function() {
+                        checkIfSolved(); 
+                    });
+                    //update pos
+                    piecePositions[draggedPiece.attr('id')] = closestSnap;
+                }
+            });
+            //finds the closest snap position by looping through and finding the closest one
+            function findSnapPt(top, left) {
+                var closest = snapPositions[0];
+                var minDistance = Infinity;
+
+                snapPositions.forEach(function(pos) {
+                    var distance = Math.sqrt(Math.pow(top - pos.top, 2) + Math.pow(left - pos.left, 2));
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closest = pos;
+                    }
+                });
+
+                return closest;
+            }   
+            //check if piece already occupies space
+            function findPiecePos(top, left) {
+                var foundPiece = null;
+                $('.puzzle-piece').each(function() {
+                    var pieceTop = parseInt($(this).css('top'));
+                    var pieceLeft = parseInt($(this).css('left'));
+
+                    if (pieceTop === top && pieceLeft === left) {
+                        foundPiece = $(this);
+                    }
+                });
+                return foundPiece;
+            }
+            // for reset
+            function checkIfSolved() {
+                var solved = true;
+
+                $('.puzzle-piece').each(function(index) {
+                    var pieceTop = parseInt($(this).css('top'));
+                    var pieceLeft = parseInt($(this).css('left'));
+                    var snapPos = snapPositions[index];
+
+                    if (pieceTop !== snapPos.top || pieceLeft !== snapPos.left) {
+                        solved = false;
+                    }
+                });
+
+
+                if (solved) {
+                    $('#message').text('Wow! you solved the New York City Rat puzzle!');
+                    $('#reset-container').show();
+                    $('.puzzle-piece').draggable('disable');
+                }
+            }
+
+            $('#reset-button').click(function() {
+                location.reload(); 
+            });
+        });
+    </script>
+</body>
+</html>
